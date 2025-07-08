@@ -651,28 +651,26 @@ class WLDeblendGalaxyCatalog(object):
     rng: np.random.RandomState
         The random number generator
     layout: str|Layout, optional
+        The layout of the galaxies in the catalog. Can be a string or a Layout object.
     coadd_dim: int, optional
         Dimensions of the coadd
     buff: int, optional
-        Buffer region with no objects, on all sides of image.  Ingored
-        for layout 'grid'.  Default 0.
+        Buffer region with no objects, on all sides of image. Ignored for layout 'grid'. Default 0.
     pixel_scale: float, optional
-        pixel scale
-    select_observable: list[str] | str
+        The pixel scale of the images
+    select_observable: list[str] | str, optional
         A list of observables to apply selection
-    select_lower_limit: list | ndarray
-        lower limits of the slection cuts
-    select_upper_limit: list | ndarray
-        upper limits of the slection cuts
-    sep: float
+    select_lower_limit: list | ndarray, optional
+        The lower limits of the selection cuts
+    select_upper_limit: list | ndarray, optional
+        The upper limits of the selection cuts
+    sep: float, optional
         Separation of galaxies in arcsec
     indice_id: None | int
         galaxy index to use, use galaxies in the range between indice_id * num
         and (indice_id + 1) * num
-    simple_coadd_bbox: optional, bool. Default: False
-        Whether to force the center of coadd boundary box (which is the default
-        center single exposure) at the world_origin
     """
+
     def __init__(
         self,
         *,
@@ -686,6 +684,8 @@ class WLDeblendGalaxyCatalog(object):
         select_upper_limit=None,
         sep=None,
         indice_id=None,
+        do_rotate=True,
+        n_factor=1.0,
         simple_coadd_bbox=False,
     ):
         self.gal_type = 'wldeblend'
@@ -697,8 +697,8 @@ class WLDeblendGalaxyCatalog(object):
             select_upper_limit=select_upper_limit,
         )
 
-        # one square degree catalog, convert to arcmin
-        density = self._wldeblend_cat.size / (60 * 60)
+        # density convert to 1/arcmin^2
+        density = self._wldeblend_cat.size / ((0.2 * 28000 / 60) ** 2) * n_factor
         if buff is None:
             buff = 0
         if isinstance(layout, str):
@@ -731,15 +731,19 @@ class WLDeblendGalaxyCatalog(object):
                 indice_max,
                 dtype=int,
             ) % self._wldeblend_cat.size
+
         # do a random rotation for each galaxy
-        self.angles = self.rng.uniform(low=0, high=360, size=num)
+        if do_rotate:
+            self.angles = self.rng.uniform(low=0, high=360, size=num)
+        else:
+            self.angles = np.zeros(num, dtype=float)
 
     def __len__(self):
         return len(self.shifts_array)
 
     def get_objlist(self, *, survey):
         """
-        get a list of galsim objects, position shifts, redshifts and indexes
+        Get a list of galsim objects, position shifts, redshifts, and indexes
 
         Parameters
         ----------
@@ -748,7 +752,12 @@ class WLDeblendGalaxyCatalog(object):
 
         Returns
         -------
-        [galsim objects], [shifts], [redshifts], [indexes]
+        dict
+            A dictionary containing the following keys:
+            - 'objlist': a list of galsim objects
+            - 'shifts': a list of position shifts
+            - 'redshifts': a list of redshifts
+            - 'indexes': a list of indexes
         """
 
         builder = descwl.model.GalaxyBuilder(
@@ -796,6 +805,7 @@ class WLDeblendGalaxyCatalog(object):
         Returns
         -------
         galsim.GSObject
+            A galsim.GSObject representing the galaxy
         """
         index = self.indices[i]
 
@@ -834,10 +844,8 @@ def read_wldeblend_cat(
     -------
     array with fields
     """
-    fname = os.path.join(
-        os.environ.get('CATSIM_DIR', '.'),
-        'OneDegSq.fits',
-    )
+    fname = os.environ.get('MDET_GL_CAT')
+    #fname = './datasets/CosmoDC2/dc2_4mdet_fits/testset_mdet_galaxy.fits'
 
     # not thread safe
     cat = cached_catalog_read(fname)

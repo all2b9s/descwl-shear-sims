@@ -321,9 +321,6 @@ def load_sample_star_densities(*, min_density, max_density):
 
 
 def load_sample_stars():
-    assert 'CATSIM_DIR' in os.environ
-    fname = os.path.join(
-        os.environ['CATSIM_DIR'],
-        'stars_med_june2018.fits',
-    )
+    #assert 'CATSIM_DIR' in os.environ
+    fname = './datasets/CosmoDC2/dc2_4mdet_fits/testset_mdet_galaxy.fits'
     return cached_catalog_read(fname)

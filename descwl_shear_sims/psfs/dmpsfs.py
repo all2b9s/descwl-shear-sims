@@ -3,7 +3,7 @@ import galsim
 import lsst.afw.image as afw_image
 import lsst.geom as geom
 from lsst.meas.algorithms import ImagePsf
-from .ps_psf import PowerSpectrumPSF
+from .ps_psf import PowerSpectrumPSF, PowerSpectrumPSF_Gauss
 
 
 def make_dm_psf(psf, psf_dim, wcs):
@@ -26,6 +26,8 @@ def make_dm_psf(psf, psf_dim, wcs):
     if isinstance(psf, galsim.GSObject):
         return FixedDMPSF(psf, psf_dim, wcs)
     elif isinstance(psf, PowerSpectrumPSF):
+        return PowerSpectrumDMPSF(psf, psf_dim, wcs)
+    elif isinstance(psf, PowerSpectrumPSF_Gauss):
         return PowerSpectrumDMPSF(psf, psf_dim, wcs)
     else:
         raise ValueError('bad psf: %s' % type(psf))

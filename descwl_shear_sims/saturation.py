@@ -4,6 +4,7 @@ from .constants import ZERO_POINT
 # saturation value for visit images, rescaled to
 # our zero point
 BAND_SAT_VALS = {
+    'u': 140000 * 10.0**(0.4*(ZERO_POINT-31.7)), # Rough estimation
     'g': 140000 * 10.0**(0.4*(ZERO_POINT-32.325)),  # from example images
     'r': 140000 * 10.0**(0.4*(ZERO_POINT-32.16)),
     'i': 140000 * 10.0**(0.4*(ZERO_POINT-31.825)),
